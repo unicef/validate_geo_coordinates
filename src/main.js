@@ -67,7 +67,7 @@ function update_row(school, object, index) {
       if (err) throw err
       client.query(text, values, (err, res) => {
         done()
-        if (index % 100 === 0)
+        if (index % 100 === 0) {
           console.log(index, is_valid, school.country_code, object.school.id,  err)
         }
         resolve()
