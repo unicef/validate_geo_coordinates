@@ -67,7 +67,7 @@ function update_row(school, object, index) {
       if (err) throw err
       client.query(text, values, (err, res) => {
         done()
-        if (index % 100 === 0) {
+        if (index % 1 === 0) {
           console.log(index, is_valid, school.country_code, object.school.id,  err)
         }
         resolve()
@@ -89,10 +89,12 @@ function validate_and_update(school, index) {
 
 get_schools_to_geo_validate()
 .then(schools => {
+  console.log(schools.length);
   bluebird.each(schools, (school, index) => {
     return validate_and_update(school, index)
   }, {concurrency: 1})
-}, () => {
-  console.log('All done!')
-  process.exit();
+  .then(() => {
+    console.log('Done with all');
+    process.exit();
+  })
 })
