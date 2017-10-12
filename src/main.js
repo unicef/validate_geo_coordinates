@@ -38,11 +38,9 @@ function get_schools_to_geo_validate() {
 
 function geo_validate_coordinates(obj) {
   return new Promise((resolve, reject) => {
-
-    resolve();
     pool_countries.connect((err, client, done) => {
       if (err) throw err
-      client.query("select * from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT($1 $2)',4326),4326), all_countries_one_table.geom);", [67.587891, 67.587891], (err, res) => {
+      client.query("select count(*) from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + obj.lon + " " + obj.lat + ")',4326),4326), all_countries_one_table.geom);", [], (err, res) => {
         done()
         if (err) {
           console.log(err.stack)
