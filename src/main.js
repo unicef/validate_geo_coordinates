@@ -42,7 +42,7 @@ function geo_validate_coordinates(school) {
   return new Promise((resolve, reject) => {
     pool_countries.connect((err, client, done) => {
       if (err) throw err
-      client.query("select iso, name_0 from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + school.lon + " " + school.lat + ")',4326),4326), all_countries_one_table.geom);", [], (err, res) => {
+      client.query("select iso, name_0, ID_0, ID_1, ID_2, ID_3, ID_4, ID_5 from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + school.lon + " " + school.lat + ")',4326),4326), all_countries_one_table.geom);", [], (err, res) => {
         done()
         if (err) {
           console.log(err.stack)
@@ -57,17 +57,43 @@ function geo_validate_coordinates(school) {
   })
 }
 
+function remove_pesky_quote(object) {
+  return Object.keys(object.rows[0]).reduce((h, key) => {
+    if (object.rows[0][key]) {
+      h[key] = object.rows[0][key].replace(/('|\s+)/g, '');
+    }
+    return h
+  }, {});
+}
+
 function update_row(school, object, index) {
   return new Promise((resolve, reject) => {
-    const text = 'update schools set date_geo_validated = CURRENT_TIMESTAMP, coords_within_country = $1 where id = $2;'
+    const text = 'update schools set date_geo_validated = CURRENT_TIMESTAMP, ' +
+    'coords_within_country = $1, ' +
+    'id_0 = $2, ' +
+    'id_1 = $3, ' +
+    'id_2 = $4, ' +
+    'id_3 = $5, ' +
+    'id_4 = $6, ' +
+    'id_5 = $7 ' +
+    'where id = $8;'
     let is_valid = false;
     let iso = null;
+    let shape_values = {};
     if (object.rows.length > 0) {
-      iso = object.rows[0].iso.replace(/('|\s+)/g, '');
+      // Remove pesky single quote
+      shape_values = remove_pesky_quote(object)
+      iso = shape_values.iso
       is_valid = object.rows.length > 0 && school.country_code === iso_3_2[iso];
     }
     const values = [
       is_valid,
+      shape_values.id_0,
+      shape_values.id_1,
+      shape_values.id_2,
+      shape_values.id_3,
+      shape_values.id_4,
+      shape_values.id_5,
       object.school.id]
       pool_schools.connect((err, client, done) => {
       if (err) throw err
