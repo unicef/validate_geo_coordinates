@@ -5,7 +5,6 @@ import bluebird from 'bluebird'
 import iso_3_2 from '../public/iso3_2'
 const pool_schools = new Pool(config.db_schools)
 const pool_countries = new Pool(config.db_countries)
-
 // the pool with emit an error on behalf of any idle clients
 // it contains if a backend error or network partition happens
 pool_schools.on('error', (err, client) => {
@@ -42,7 +41,8 @@ function geo_validate_coordinates(school) {
   return new Promise((resolve, reject) => {
     pool_countries.connect((err, client, done) => {
       if (err) throw err
-      client.query("select iso, name_0, ID_0, ID_1, ID_2, ID_3, ID_4, ID_5 from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + school.lon + " " + school.lat + ")',4326),4326), all_countries_one_table.geom);", [], (err, res) => {
+      // client.query("select iso, name_0, ID_0, ID_1, ID_2, ID_3, ID_4, ID_5 from all_countries_one_table WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + school.lon + " " + school.lat + ")',4326),4326), all_countries_one_table.geom);", [], (err, res) => {
+      client.query("select gid_0, name_0, gid_0, gid_1, gid_2, gid_3, gid_4, gid_5 from highest_level_admin  WHERE ST_Within (ST_Transform (ST_GeomFromText ('POINT(" + school.lon + " " + school.lat + ")',4326),4326), highest_level_admin.geom);", [], (err, res) => {
         done()
         if (err) {
           console.log(err.stack)
@@ -83,7 +83,7 @@ function update_row(school, object, index) {
     if (object.rows.length > 0) {
       // Remove pesky single quote
       shape_values = remove_pesky_quote(object)
-      iso = shape_values.iso
+      iso = shape_values.gid_0
       is_valid = object.rows.length > 0 && school.country_code === iso_3_2[iso];
     }
     const values = [
@@ -127,7 +127,7 @@ get_schools_to_geo_validate()
     return validate_and_update(school, index)
   }, {concurrency: 1})
   .then(() => {
-    console.log('Done with all');
+    console.log('Last validation done at:', Date());
     process.exit();
   })
 })
